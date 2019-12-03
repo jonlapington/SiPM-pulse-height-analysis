@@ -18,6 +18,31 @@ from scipy.special import factorial
 from scipy.signal import find_peaks
 from lmfit import Model, Parameters
 
+def draw_gaussian(x, area, centre, sigma):
+    """
+    Generate a Gaussian distribution with area = 1.
+
+    Parameters
+    ----------
+    x : array
+        An array of the x coordinates
+    area : scalar int
+        The area under the Gaussian = the number of events constituting
+    centre : scalar
+        The centre of the Gaussian
+    sigma : scalar
+        The standard deviation
+
+    Returns
+    -------
+    data : ndarray 
+        The Gaussian distribution
+
+    """
+    step = (x[-1] - x[0])/(len(x) - 1)
+    s2pi = np.sqrt(2.0*np.pi)
+    return (area * step) / (sigma * s2pi) * np.exp(-1.0*(x-centre)**2 /(2*sigma**2))
+
 def poisson(mu, arrsz):
     """
     Array of Poisson probabilities for a given mean number per event.
@@ -103,9 +128,9 @@ def sipm_phdfit(x, y, npk, nz_pe=0):
     """
     ymax = y.max()
     #find peaks in the PHD to npk
-    for i in range(20):
-        peaks, p_prop = find_peaks(y, prominence=ymax/2/i, height=ymax/10)
-        if len(peaks)==npk: break
+    for i in range(50):
+        peaks, p_prop = find_peaks(y, prominence=ymax*(1-i/50), height=ymax/10)
+        if len(peaks)>=npk: break
     #now estimate the initial fit parameters
     mu = np.sum(p_prop['peak_heights']*np.arange(nz_pe,npk+nz_pe))/np.sum(p_prop['peak_heights'])
     nev = np.sum(y)
@@ -135,12 +160,11 @@ def sipm_phdfit(x, y, npk, nz_pe=0):
 
 def main():
     #a simple test procedure
-    initdir = r'C:\Users\jon\OneDrive\Python\data\LVR3_Angaraj'
-    filename = initdir+'\phdhist.npz'
+    filename = './set2_67.4_C1_peaks.npz'
     npzfile = np.load(filename)
-    x, y, binedges = npzfile['arr_0'], npzfile['arr_1'], npzfile['arr_2']
+    x, y = npzfile['arr_0'], npzfile['arr_1']
     #input number of distinguishable peaks
-    npk = 5
+    npk = 4
     result = sipm_phdfit(x, y, npk, nz_pe=1)
     # plot measured data
     plt.plot(x, y, 'b', linewidth=1, label='raw data')
